@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -30,6 +32,15 @@ const userSchema = new mongoose.Schema({
       }
     }   
   }
+})
+
+userSchema.pre('save', async function(next) {
+  const user = this
+  //hash password only if user is just created or updated, the check is done using mongoose .isModified
+  if(user.isModified) {
+    user.password = await bcrypt.hash(user.password, 8)
+  }
+  next()
 })
 
 
