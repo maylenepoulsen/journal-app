@@ -31,13 +31,43 @@ const userSchema = new mongoose.Schema({
         throw new Error('Your password cannot contain "password".')
       }
     }   
-  }
+  },
+  tokens: [{
+    token: {
+      type: String,
+      required: true
+    }
+  }]
 })
+
+userSchema.methods.generateAuthToken = async function () {
+  const user = this
+  const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET)
+  user.tokens = user.tokens.concat({ token })
+
+  await user.save()
+  return token
+}
+
+userSchema.statics.findByEmailAndPassword = async (email, password) => {
+  const user = await User.findOne({ email })
+  if(!user) {
+    throw new Error('Unable to login')
+  }
+ 
+  const isMatch = await bcrypt.compare(password, user.password)
+
+  if(!isMatch) {
+    throw new Error('Unable to login')
+  }
+  
+  return user
+}
 
 userSchema.pre('save', async function(next) {
   const user = this
   //hash password only if user is just created or updated, the check is done using mongoose .isModified
-  if(user.isModified) {
+  if(user.isModified('password')) {
     user.password = await bcrypt.hash(user.password, 8)
   }
   next()
