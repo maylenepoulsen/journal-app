@@ -9,6 +9,11 @@ const postSchema = new mongoose.Schema({
     },
     color: {
         type: String
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
     }
 })
 
